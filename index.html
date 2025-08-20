@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Football Team Picker</title>
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 40px;
+  background: linear-gradient(120deg, #e0f7fa, #fff8e1);
+  color: #333;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  color: #007bff;
+  text-shadow: 1px 1px #ccc;
+}
+
+form, #resetContainer, #shareContainer {
+  background: white;
+  padding: 25px;
+  border-radius: 16px;
+  display: inline-block;
+  margin: 15px auto;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  width: 320px;
+}
+
+input, select, button {
+  font-size: 16px;
+  padding: 12px;
+  margin: 10px 0;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0,123,255,0.5);
+  outline: none;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+#resetButton {
+  background: #dc3545;
+}
+
+#resetButton:hover {
+  background: #a71d2a;
+}
+
+#pickedContainer {
+  margin-top: 30px;
+}
+
+#pickedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.pickedCard {
+  background-color: #007bff;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.pickedCard:hover {
+  transform: translateY(-5px);
+}
+
+.teamName {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.pickedBy {
+  font-size: 0.95em;
+  opacity: 0.85;
+}
+
+#copyLinkButton {
+  background: #28a745;
+}
+
+#copyLinkButton:hover {
+  background: #1e7e34;
+}
+
+#linkMessage {
+  font-size: 14px;
+  margin-top: 5px;
+  min-height: 18px;
+}
+</style>
+</head>
+<body>
+<h1>Pick Your Football Team</h1>
+
+<form id="teamForm">
+<input type="text" id="name" placeholder="Your name" required>
+<select id="teamSelect" required></select>
+<button type="submit">Pick Team</button>
+</form>
+
+<div id="shareContainer">
+  <button id="copyLinkButton">Copy Form Link</button>
+  <p id="linkMessage"></p>
+</div>
+
+<div id="resetContainer">
+<button id="resetButton">Reset All Teams</button>
+</div>
+
+<div id="pickedContainer">
+<h2>Picked Teams</h2>
+<div id="pickedGrid"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, getDoc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+// ====== REPLACE WITH YOUR FIREBASE CONFIG ======
+const firebaseConfig = {
+  apiKey: "AIzaSyCnDsb6FcfiJyu5JsXXkL7i91ekVpXgFfo",
+  authDomain: "football-picker-efcc5.firebaseapp.com",
+  projectId: "football-picker-efcc5",
+  storageBucket: "football-picker-efcc5.firebasestorage.app",
+  messagingSenderId: "854692046028",
+  appId: "1:854692046028:web:1f0dddf9ce98f83894ce69"
+};
+// ===============================================
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const teamSelect = document.getElementById("teamSelect");
+const teamForm = document.getElementById("teamForm");
+const resetButton = document.getElementById("resetButton");
+const pickedGrid = document.getElementById("pickedGrid");
+
+const teams = [
+  "Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea",
+  "Crystal Palace","Everton","Fulham","Liverpool","Luton Town",
+  "Manchester City","Manchester United","Newcastle United","Nottingham Forest",
+  "Sheffield United","Tottenham Hotspur","West Ham United","Wolverhampton Wanderers","Burnley",
+  "Birmingham City","Blackburn Rovers","Blackpool","Bristol City","Cardiff City","Coventry City",
+  "Derby County","Huddersfield Town","Hull City","Ipswich Town","Leeds United","Leicester City",
+  "Middlesbrough","Millwall","Norwich City","Preston North End","Queens Park Rangers","Reading",
+  "Rotherham United","Sheffield Wednesday","Southampton","Stoke City","Sunderland","Watford"
+];
+
+(async () => {
+  for(const team of teams){
+    const id = team.toLowerCase().replace(/ /g,"_");
+    const docRef = doc(db, "teams", id);
+    const snap = await getDoc(docRef);
+    if(!snap.exists()){
+      await setDoc(docRef, { name: team, taken: false, pickedBy: "" });
+    }
+  }
+})();
+
+const availableQuery = query(collection(db, "teams"), where("taken", "==", false));
+onSnapshot(availableQuery, snapshot => {
+  teamSelect.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const opt = document.createElement("option");
+    opt.value = docSnap.id;
+    opt.textContent = docSnap.data().name;
+    teamSelect.appendChild(opt);
+  });
+  if(teamSelect.options.length === 0){
+    const opt = document.createElement("option");
+    opt.textContent = "No teams left!";
+    teamSelect.appendChild(opt);
+  }
+});
+
+function stringToColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return `hsl(${hash % 360}, 70%, 50%)`;
+}
+
+onSnapshot(collection(db, "teams"), snapshot => {
+  pickedGrid.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if(data.taken){
+      const card = document.createElement("div");
+      card.className = "pickedCard";
+      card.style.backgroundColor = stringToColor(data.pickedBy);
+
+      const teamEl = document.createElement("div");
+      teamEl.className = "teamName";
+      teamEl.textContent = data.name;
+
+      const byEl = document.createElement("div");
+      byEl.className = "pickedBy";
+      byEl.textContent = `Picked by ${data.pickedBy}`;
+
+      card.appendChild(teamEl);
+      card.appendChild(byEl);
+      pickedGrid.appendChild(card);
+    }
+  });
+});
+
+teamForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const name = document.getElementById("name").value.trim();
+  const teamId = teamSelect.value;
+  if(!teamId || teamSelect.options[0].text === "No teams left!") return;
+
+  await updateDoc(doc(db, "teams", teamId), {
+    taken: true,
+    pickedBy: name
+  });
+
+  teamForm.reset();
+});
+
+resetButton.addEventListener("click", async () => {
+  if(!confirm("Are you sure you want to reset all teams?")) return;
+  const snapshot = await getDocs(collection(db, "teams"));
+  const batchPromises = [];
+  snapshot.forEach(docSnap => {
+    batchPromises.push(updateDoc(doc(db, "teams", docSnap.id), { taken: false, pickedBy: "" }));
+  });
+  await Promise.all(batchPromises);
+  alert("All teams have been reset!");
+});
+
+const copyLinkButton = document.getElementById("copyLinkButton");
+const linkMessage = document.getElementById("linkMessage");
+
+copyLinkButton.addEventListener("click", () => {
+  const link = window.location.href;
+  navigator.clipboard.writeText(link).then(() => {
+    linkMessage.textContent = "Link copied to clipboard!";
+    setTimeout(() => { linkMessage.textContent = ""; }, 3000);
+  }).catch(() => {
+    linkMessage.textContent = "Failed to copy link.";
+  });
+});
+</script>
+</body>
+</html>
