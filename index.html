@@ -134,6 +134,148 @@ button:hover {
 <button id="resetButton">Reset All Teams</button>
 </div>
 
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Football Team Picker</title>
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 40px;
+  text-align: center;
+  background: linear-gradient(120deg, #e0f7fa, #fff8e1);
+  color: #333;
+}
+
+h1 {
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  color: #007bff;
+  text-shadow: 1px 1px #ccc;
+}
+
+form, #resetContainer, #shareContainer {
+  background: white;
+  padding: 25px;
+  border-radius: 16px;
+  display: inline-block;
+  margin: 15px auto;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  width: 320px;
+}
+
+input, select, button {
+  font-size: 16px;
+  padding: 12px;
+  margin: 10px 0;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0,123,255,0.5);
+  outline: none;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+#resetButton {
+  background: #dc3545;
+}
+
+#resetButton:hover {
+  background: #a71d2a;
+}
+
+#pickedContainer {
+  margin-top: 30px;
+  text-align: left;
+}
+
+#pickedContainer h2 {
+  text-align: center;
+}
+
+#pickedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.pickedCard {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  text-align: center;
+}
+
+.pickedTeam {
+  font-size: 1.1em;
+  margin-bottom: 5px;
+}
+
+.pickedBy {
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+#copyLinkButton {
+  background: #28a745;
+}
+
+#copyLinkButton:hover {
+  background: #1e7e34;
+}
+
+#linkMessage {
+  font-size: 14px;
+  margin-top: 5px;
+  min-height: 18px;
+}
+</style>
+</head>
+<body>
+<h1>Pick Your Football Team</h1>
+
+<form id="teamForm">
+<input type="text" id="name" placeholder="Your name" required>
+<select id="teamSelect" required></select>
+<button type="submit">Pick Team</button>
+</form>
+
+<div id="shareContainer">
+  <button id="copyLinkButton">Copy Form Link</button>
+  <p id="linkMessage"></p>
+</div>
+
+<div id="resetContainer">
+<button id="resetButton">Reset All Teams</button>
+</div>
+
 <div id="pickedContainer">
 <h2>Picked Teams</h2>
 <div id="pickedGrid"></div>
@@ -217,16 +359,16 @@ onSnapshot(collection(db, "teams"), snapshot => {
       card.className = "pickedCard";
       card.style.backgroundColor = stringToColor(data.pickedBy);
 
-      const teamEl = document.createElement("div");
-      teamEl.className = "teamName";
-      teamEl.textContent = data.name;
+      const teamName = document.createElement("div");
+      teamName.className = "pickedTeam";
+      teamName.textContent = data.name;
 
-      const byEl = document.createElement("div");
-      byEl.className = "pickedBy";
-      byEl.textContent = `Picked by ${data.pickedBy}`;
+      const pickedBy = document.createElement("div");
+      pickedBy.className = "pickedBy";
+      pickedBy.textContent = `Picked by ${data.pickedBy}`;
 
-      card.appendChild(teamEl);
-      card.appendChild(byEl);
+      card.appendChild(teamName);
+      card.appendChild(pickedBy);
       pickedGrid.appendChild(card);
     }
   });
